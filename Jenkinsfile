@@ -1,50 +1,53 @@
 pipeline {
-    // 1. Where to run: 'any' means any available Jenkins runner/agent
     agent any
 
-    // 2. Load the Terraform tool you configured in 'Global Tool Configuration'
     tools {
-        terraform 'terraform' 
-    }
-
-    // 3. Securely pull your Azure secrets into environment variables
-    environment {
-        ARM_CLIENT_ID       = credentials('AZURE_CLIENT_ID')
-        ARM_CLIENT_SECRET   = credentials('AZURE_CLIENT_SECRET')
-        ARM_SUBSCRIPTION_ID = credentials('AZURE_SUBSCRIPTION_ID')
-        ARM_TENANT_ID       = credentials('AZURE_TENANT_ID')
+        // This must match the name you gave the tool in 'Manage Jenkins > Tools'
+        terraform 'terraform'
     }
 
     stages {
-        // 4. Download Terraform providers and initialize the remote backend
+        stage('Checkout') {
+            steps {
+                // This pulls your main.tf, variables.tf, and backend.tf
+                checkout scm
+            }
+        }
+
         stage('Terraform Init') {
             steps {
-                sh 'terraform init'
+                // Using the Azure Service Principal ID you created in Jenkins
+                withCredentials([azureServicePrincipal('azure-sp')]) {
+                    sh 'terraform init'
+                }
             }
         }
 
-        // 5. Preview what changes will be made (Safety Check)
         stage('Terraform Plan') {
             steps {
-                sh 'terraform plan -out=tfplan'
+                withCredentials([azureServicePrincipal('azure-sp')]) {
+                    // Saves the plan to a file to ensure 'Apply' uses the exact same plan
+                    sh 'terraform plan -out=tfplan'
+                }
             }
         }
 
-        // 6. Execute the plan and build the Azure Infrastructure
         stage('Terraform Apply') {
             steps {
-                // We use -auto-approve because the pipeline is automated
-                sh 'terraform apply -auto-approve tfplan'
+                withCredentials([azureServicePrincipal('azure-sp')]) {
+                    // Executes the deployment to Azure
+                    sh 'terraform apply -auto-approve tfplan'
+                }
             }
         }
     }
-    
-    // 7. Clean up workspace after build
+
     post {
         always {
-            // This ensures we only try to delete the directory if an agent was actually used
+            // Clean up sensitive files and the plan from the Jenkins workspace
             node('any') {
                 deleteDir()
             }
         }
     }
+}
