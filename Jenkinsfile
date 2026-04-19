@@ -6,7 +6,7 @@ pipeline {
 
     environment {
         // This pulls the "azure-sp" credential package from Jenkins
-        AZURE_CREDS = credentials('azure-sp')
+        AZURE_CREDS = credentials('jenkins-cicd-sp')
     }
 
     stages {
