@@ -42,7 +42,9 @@ pipeline {
     // 7. Clean up workspace after build
     post {
         always {
-            deleteDir()
+            // This ensures we only try to delete the directory if an agent was actually used
+            node('any') {
+                deleteDir()
+            }
         }
     }
-}
