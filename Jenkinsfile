@@ -1,5 +1,9 @@
 pipeline {
-    agent any
+    agent {
+        node {
+            label '' // Leaves the label blank to find any available executor
+        }
+    }
 
     tools {
         // This must match the name you gave the tool in 'Manage Jenkins > Tools'
