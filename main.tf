@@ -4,7 +4,7 @@ provider "azurerm" {
 
 # Resource Group creation
 resource "azurerm_resource_group" "rg" {
-  name     = "Nebula"
+  name     = "Nebula1"
   location = "Central India" # Fixed typo: 'Ceentral' to 'Central'
 }
 
